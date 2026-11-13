@@ -1,0 +1,9 @@
+{
+  "name": "frontend-gym",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Тренажёр по курсу фронтенда: JS, TS, HTML, CSS, React, Git, GitHub, JSON, Prettier, Husky",
+  "scripts": {
+    "build": "node build.js"
+  }
+}

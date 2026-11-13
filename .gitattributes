@@ -1,0 +1,6 @@
+* text=auto eol=lf
+*.bat text eol=crlf
+# большие собранные файлы и чужие библиотеки: не показывать построчные отличия
+frontend-gym.html -diff linguist-generated
+prebuilt/*.html -diff linguist-generated
+src/*/vendor/** -diff linguist-vendored

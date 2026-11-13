@@ -1,0 +1,13 @@
+# то, что создаётся при сборке
+node_modules/
+src/*/dist/
+src/hub/gyms/
+src/ts-types-gym/build/
+
+# результаты проверок
+*.png
+__pycache__/
+
+# системные файлы
+.DS_Store
+Thumbs.db

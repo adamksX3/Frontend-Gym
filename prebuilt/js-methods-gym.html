@@ -1,0 +1,1157 @@
+<title>JS Methods Gym</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=Onest:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: workbench — task list rail on the left, task sheet + editor on the right; stacks on phones */
+:root {
+  --bg: #eef1f4;
+  --surface: #ffffff;
+  --ink: #171b24;
+  --muted: #5d6675;
+  --line: #d7dce3;
+  --accent: #f0d43a;      /* JS yellow, used as fill */
+  --accent-ink: #7a6400;  /* yellow readable as text */
+  --code-bg: #f7f8fa;
+  --ok: #1f8a4c;
+  --ok-bg: #e3f4ea;
+  --bad: #c0392b;
+  --bad-bg: #fbe7e4;
+  --font-display: 'Unbounded', 'Segoe UI', system-ui, sans-serif;
+  --font-body: 'Onest', 'Segoe UI', system-ui, sans-serif;
+  --font-code: 'JetBrains Mono', ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #14161b; --surface: #1c1f26; --ink: #e8eaef; --muted: #9aa2b1; --line: #2c313b;
+    --accent: #f0d43a; --accent-ink: #f0d43a; --code-bg: #111318;
+    --ok: #4fd18b; --ok-bg: #173226; --bad: #ff7b6b; --bad-bg: #3a1f1c;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #14161b; --surface: #1c1f26; --ink: #e8eaef; --muted: #9aa2b1; --line: #2c313b;
+  --accent: #f0d43a; --accent-ink: #f0d43a; --code-bg: #111318;
+  --ok: #4fd18b; --ok-bg: #173226; --bad: #ff7b6b; --bad-bg: #3a1f1c;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink);
+  font: 15px/1.55 var(--font-body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 20px 40px;
+}
+.app { max-width: 1240px; margin: 0 auto; display: grid; gap: 20px; }
+header.top { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px 24px; }
+.brand { display: flex; align-items: center; gap: 12px; }
+.logo {
+  width: 44px; height: 44px; background: var(--accent); color: #171b24;
+  display: grid; place-items: end end; padding: 4px 6px;
+  font: 700 17px/1 var(--font-display); border-radius: 4px; flex: none;
+}
+h1 { font: 700 clamp(20px, 3vw, 26px)/1.1 var(--font-display); margin: 0; letter-spacing: -0.01em; }
+.tagline { margin: 2px 0 0; color: var(--muted); font-size: 14px; }
+.overall { display: flex; align-items: center; gap: 12px; font-variant-numeric: tabular-nums; }
+.overall .bar { width: 160px; height: 8px; background: var(--line); border-radius: 99px; overflow: hidden; }
+.overall .bar i { display: block; height: 100%; background: var(--accent); width: 0; transition: width .3s; }
+.overall b { font: 600 14px var(--font-code); }
+
+.layout { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .layout { grid-template-columns: minmax(0, 1fr); } }
+
+/* rail */
+.rail { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; position: sticky; top: calc(12px + env(safe-area-inset-top, 0px)); }
+@media (max-width: 860px) { .rail { position: static; } }
+.tabs { display: grid; grid-template-columns: repeat(4, 1fr); border-bottom: 1px solid var(--line); }
+.tabs button {
+  border: 0; background: none; color: var(--muted); padding: 10px 4px 9px; cursor: pointer;
+  font: 600 12px var(--font-body); border-bottom: 3px solid transparent; display: grid; gap: 1px;
+}
+.tabs button span { font: 400 11px var(--font-code); }
+.tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); }
+.tasklist { list-style: none; margin: 0; padding: 6px; max-height: calc(100vh - 210px); overflow-y: auto; }
+@media (max-width: 860px) { .tasklist { max-height: 260px; } }
+.tasklist li button {
+  width: 100%; display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; align-items: center; gap: 8px;
+  text-align: left; border: 0; background: none; color: var(--ink); padding: 7px 8px; border-radius: 6px; cursor: pointer;
+  font: 14px var(--font-body);
+}
+.tasklist li button:hover { background: var(--code-bg); }
+.tasklist li button[aria-current="true"] { background: var(--code-bg); box-shadow: inset 3px 0 0 var(--accent); }
+.tasklist .num { font: 11px var(--font-code); color: var(--muted); }
+.tasklist .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tasklist .done .num { color: var(--ok); font-weight: 600; }
+.lvl { display: inline-flex; gap: 2px; }
+.lvl i { width: 6px; height: 6px; border-radius: 1px; background: var(--line); }
+.lvl i.on { background: var(--accent-ink); }
+.lvlsep { padding: 8px 8px 2px; font: 600 10px var(--font-code); text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+
+/* sheet */
+.sheet { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: clamp(16px, 3vw, 28px); display: grid; gap: 16px; min-width: 0; }
+.meta { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; font: 12px var(--font-code); color: var(--muted); }
+.meta .badge { background: var(--accent); color: #171b24; padding: 2px 8px; border-radius: 3px; font-weight: 600; }
+.meta .solved { color: var(--ok); font-weight: 600; }
+h2 { font: 700 clamp(19px, 2.4vw, 24px)/1.2 var(--font-display); margin: 0; text-wrap: balance; }
+.text { margin: 0; max-width: 68ch; font-size: 16px; }
+.sig { font: 14px var(--font-code); color: var(--muted); margin: 0; overflow-x: auto; }
+.sig b { color: var(--ink); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.chips .lab { font: 600 11px var(--font-code); text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-right: 4px; }
+.chip { font: 13px var(--font-code); background: var(--code-bg); border: 1px solid var(--line); padding: 1px 8px; border-radius: 4px; }
+
+.editor-wrap { border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--code-bg); }
+.editor-head { display: flex; justify-content: space-between; align-items: center; padding: 6px 12px; border-bottom: 1px solid var(--line); font: 12px var(--font-code); color: var(--muted); gap: 8px; flex-wrap: wrap; }
+textarea#code {
+  display: block; width: 100%; min-height: 220px; resize: vertical; border: 0; outline: none;
+  background: var(--code-bg); color: var(--ink); padding: 14px; tab-size: 2;
+  font: 14px/1.6 var(--font-code); white-space: pre; overflow-x: auto;
+}
+textarea#code:focus-visible { box-shadow: inset 0 0 0 2px var(--accent); }
+
+.actions { display: flex; flex-wrap: wrap; gap: 8px; }
+button.btn {
+  font: 600 14px var(--font-body); padding: 9px 16px; border-radius: 6px; cursor: pointer;
+  border: 1px solid var(--line); background: var(--surface); color: var(--ink);
+}
+button.btn:hover { border-color: var(--muted); }
+button.btn.primary { background: var(--accent); border-color: var(--accent); color: #171b24; }
+button.btn.primary:hover { filter: brightness(0.95); }
+button.btn:focus-visible, .tabs button:focus-visible, .tasklist button:focus-visible { outline: 2px solid var(--accent-ink); outline-offset: 2px; }
+.kbd { font: 11px var(--font-code); opacity: .7; margin-left: 4px; }
+
+.panel { border-radius: 8px; padding: 12px 14px; font-size: 14px; }
+.panel.hint { background: var(--code-bg); border: 1px dashed var(--line); }
+.panel.hint b { color: var(--accent-ink); }
+.panel.solution { background: var(--code-bg); border: 1px solid var(--line); display: grid; gap: 8px; }
+.panel.solution pre { margin: 0; font: 13.5px/1.6 var(--font-code); overflow-x: auto; }
+.panel.confirm { background: var(--code-bg); border: 1px solid var(--line); display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.panel.explain { background: var(--ok-bg); color: var(--ink); }
+
+.results { display: grid; gap: 6px; }
+.summary { font: 600 14px var(--font-body); padding: 10px 14px; border-radius: 8px; }
+.summary.ok { background: var(--ok-bg); color: var(--ok); }
+.summary.bad { background: var(--bad-bg); color: var(--bad); }
+.test { display: grid; grid-template-columns: 20px minmax(0, 1fr); gap: 8px; font: 13px/1.5 var(--font-code); padding: 6px 4px; border-bottom: 1px solid var(--line); }
+.test:last-child { border-bottom: 0; }
+.test .mark { font-weight: 700; }
+.test.ok .mark { color: var(--ok); }
+.test.bad .mark { color: var(--bad); }
+.test .body { min-width: 0; overflow-wrap: anywhere; }
+.test .detail { color: var(--muted); }
+.test .detail em { font-style: normal; color: var(--bad); }
+
+.nav { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; border-top: 1px solid var(--line); padding-top: 14px; }
+footer.note { color: var(--muted); font-size: 13px; max-width: 80ch; }
+footer.note code { font-family: var(--font-code); }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="app">
+  <header class="top">
+    <div class="brand">
+      <div class="logo" aria-hidden="true">JS</div>
+      <div>
+        <h1>JS Methods Gym</h1>
+        <p class="tagline">Задачи на методы строк, массивов и объектов — от разминки до босса</p>
+      </div>
+    </div>
+    <div class="overall" aria-label="Общий прогресс">
+      <div class="bar"><i id="overall-bar"></i></div>
+      <b id="overall-text">0 / 0</b>
+    </div>
+  </header>
+
+  <div class="layout">
+    <nav class="rail" aria-label="Задачи">
+      <div class="tabs" role="tablist" id="tabs"></div>
+      <ul class="tasklist" id="tasklist"></ul>
+    </nav>
+
+    <main class="sheet" id="sheet">
+      <div class="meta" id="meta"></div>
+      <h2 id="title"></h2>
+      <p class="text" id="text"></p>
+      <div class="chips" id="chips"></div>
+
+      <div class="editor-wrap">
+        <div class="editor-head">
+          <span id="fname">solution.js</span>
+          <span>Tab — отступ · Ctrl+Enter — проверить</span>
+        </div>
+        <textarea id="code" spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="Редактор кода"></textarea>
+      </div>
+
+      <div class="actions">
+        <button class="btn primary" id="run">Проверить<span class="kbd">Ctrl+Enter</span></button>
+        <button class="btn" id="hint-btn">Подсказка</button>
+        <button class="btn" id="solution-btn">Решение</button>
+        <button class="btn" id="reset-btn">Сбросить код</button>
+      </div>
+
+      <div id="extra"></div>
+      <div class="results" id="results" aria-live="polite"></div>
+
+      <div class="nav">
+        <button class="btn" id="prev">← Назад</button>
+        <button class="btn" id="next">Дальше →</button>
+      </div>
+    </main>
+  </div>
+
+  <footer class="note">
+    Код запускается прямо в браузере. Прогресс и черновики сохраняются в этом браузере.
+    Решил задачу — проговори вслух, что делает каждая строка. Не можешь объяснить — посмотри шпаргалку и попробуй ещё раз.
+  </footer>
+</div>
+
+<script id="runner-src">
+// Runs inside a Web Worker (and in Node for self-tests).
+function deepEqual(a, b) {
+  if (Object.is(a, b)) return true;
+  if (typeof a !== 'object' || typeof b !== 'object' || a === null || b === null) return false;
+  if (a instanceof Map || b instanceof Map) {
+    if (!(a instanceof Map && b instanceof Map) || a.size !== b.size) return false;
+    for (const [k, v] of a) if (!b.has(k) || !deepEqual(v, b.get(k))) return false;
+    return true;
+  }
+  if (a instanceof Set || b instanceof Set) {
+    if (!(a instanceof Set && b instanceof Set) || a.size !== b.size) return false;
+    for (const v of a) if (!b.has(v)) return false;
+    return true;
+  }
+  if (Array.isArray(a) !== Array.isArray(b)) return false;
+  const ka = Object.keys(a);
+  const kb = Object.keys(b);
+  if (ka.length !== kb.length) return false;
+  return ka.every((k) => Object.prototype.hasOwnProperty.call(b, k) && deepEqual(a[k], b[k]));
+}
+
+function show(v, depth = 0) {
+  if (depth > 4) return '…';
+  if (typeof v === 'string') return "'" + v + "'";
+  if (typeof v === 'function') return 'function';
+  if (typeof v === 'undefined') return 'undefined';
+  if (typeof v === 'number' && Object.is(v, -0)) return '-0';
+  if (v === null || typeof v !== 'object') return String(v);
+  if (v instanceof Map) return 'Map(' + [...v].map(([k, x]) => show(k, depth + 1) + ' => ' + show(x, depth + 1)).join(', ') + ')';
+  if (v instanceof Set) return 'Set(' + [...v].map((x) => show(x, depth + 1)).join(', ') + ')';
+  if (Array.isArray(v)) return '[' + v.map((x) => show(x, depth + 1)).join(', ') + ']';
+  const entries = Object.entries(v);
+  if (entries.length === 0) return '{}';
+  return '{ ' + entries.map(([k, x]) => (/^[A-Za-z_$][\w$]*$/.test(k) ? k : "'" + k + "'") + ': ' + show(x, depth + 1)).join(', ') + ' }';
+}
+
+function runTask(code, fnName, tests) {
+  let fn;
+  try {
+    fn = new Function(code + '\n;return typeof ' + fnName + " === 'function' ? " + fnName + ' : undefined;')();
+  } catch (e) {
+    return { fatal: e.name + ': ' + e.message };
+  }
+  if (typeof fn !== 'function') return { fatal: 'Не найдена функция ' + fnName + '. Не переименовывай её.' };
+  const results = tests.map(([src, expSrc, label]) => {
+    const isCode = src[0] === '@';
+    const call = isCode ? label : fnName + '(' + src + ')';
+    let expected;
+    try {
+      expected = new Function('return (' + expSrc + ');')();
+    } catch (e) {
+      return { call, ok: false, error: 'bad test: ' + e.message };
+    }
+    try {
+      const actual = isCode
+        ? new Function(fnName, 'return eval(' + JSON.stringify(src.slice(1)) + ');')(fn)
+        : new Function(fnName, 'return ' + fnName + '(' + src + ');')(fn);
+      return { call, ok: deepEqual(actual, expected), actual: show(actual), expected: show(expected) };
+    } catch (e) {
+      return { call, ok: false, error: e.name + ': ' + e.message, expected: show(expected) };
+    }
+  });
+  return { results };
+}
+
+if (typeof module !== 'undefined') module.exports = { runTask, deepEqual, show };
+
+</script>
+<script>
+// tests: [argsSource, expectedSource] or ['@code ending with expression', expectedSource, label]
+const TASKS = [
+  // ───────── STRINGS & NUMBERS ─────────
+  {
+    id: 's01', topic: 'str', level: 1, fn: 'capitalize', params: 'str',
+    title: 'Заглавная буква',
+    text: 'Верни строку, в которой первая буква заглавная, а остальное не меняется.',
+    methods: ['str[0]', 'toUpperCase', 'slice'],
+    hint: 'Склей две части: первый символ в верхнем регистре + всё, начиная с позиции 1.',
+    solution: "function capitalize(str) {\n  return str[0].toUpperCase() + str.slice(1);\n}",
+    tests: [["'hello'", "'Hello'"], ["'javaScript'", "'JavaScript'"], ["'a'", "'A'"], ["'Rs school'", "'Rs school'"]],
+  },
+  {
+    id: 's02', topic: 'str', level: 1, fn: 'lastChar', params: 'str',
+    title: 'Последний символ',
+    text: 'Верни последний символ строки.',
+    methods: ['length', 'at'],
+    hint: 'Номер последнего символа на 1 меньше длины. Или метод at с отрицательным числом.',
+    solution: "function lastChar(str) {\n  return str.at(-1);\n}",
+    tests: [["'cat'", "'t'"], ["'Arthur'", "'r'"], ["'x'", "'x'"]],
+  },
+  {
+    id: 's03', topic: 'str', level: 1, fn: 'countChar', params: 'str, ch',
+    title: 'Сколько раз встречается символ',
+    text: 'Посчитай, сколько раз символ ch встречается в строке str.',
+    methods: ['split', 'length'],
+    hint: 'Если разрезать строку по символу, кусков будет на один больше, чем символов.',
+    solution: "function countChar(str, ch) {\n  return str.split(ch).length - 1;\n}",
+    tests: [["'banana', 'a'", '3'], ["'hello', 'l'", '2'], ["'hello', 'z'", '0'], ["'', 'a'", '0']],
+  },
+  {
+    id: 's04', topic: 'str', level: 2, fn: 'isPalindrome', params: 'str',
+    title: 'Палиндром',
+    text: 'Верни true, если слово читается одинаково слева направо и справа налево. Регистр букв не важен.',
+    methods: ['toLowerCase', 'split', 'reverse', 'join'],
+    hint: 'Приведи к нижнему регистру, переверни через массив и сравни с исходной.',
+    solution: "function isPalindrome(str) {\n  const lower = str.toLowerCase();\n  return lower === lower.split('').reverse().join('');\n}",
+    tests: [["'level'", 'true'], ["'Anna'", 'true'], ["'hello'", 'false'], ["'a'", 'true']],
+  },
+  {
+    id: 's05', topic: 'str', level: 2, fn: 'maskCard', params: 'num',
+    title: 'Маска номера карты',
+    text: 'Замени все символы, кроме последних четырёх, на звёздочки. Длина строки не меняется.',
+    methods: ['slice', 'padStart', 'length'],
+    hint: 'Возьми последние 4 символа через slice(-4) и дополни их слева звёздочками до исходной длины.',
+    solution: "function maskCard(num) {\n  return num.slice(-4).padStart(num.length, '*');\n}",
+    tests: [["'1234567812345678'", "'************5678'"], ["'98765'", "'*8765'"], ["'1234'", "'1234'"]],
+  },
+  {
+    id: 's06', topic: 'str', level: 2, fn: 'initials', params: 'fullName',
+    title: 'Инициалы',
+    text: "Из полного имени сделай инициалы с точками: 'Arthur Riht' → 'A.R.'. Слов может быть больше двух.",
+    methods: ['split', 'map', 'toUpperCase', 'join'],
+    hint: "Разрежь по пробелу, каждое слово превратить в 'первая буква + точка', склей без разделителя.",
+    solution: "function initials(fullName) {\n  return fullName\n    .split(' ')\n    .map((word) => word[0].toUpperCase() + '.')\n    .join('');\n}",
+    tests: [["'Arthur Riht'", "'A.R.'"], ["'john ronald reuel tolkien'", "'J.R.R.T.'"], ["'Ada'", "'A.'"]],
+  },
+  {
+    id: 's07', topic: 'str', level: 2, fn: 'formatPrice', params: 'n',
+    title: 'Цена с копейками',
+    text: "Верни цену строкой с двумя знаками после точки и знаком рубля через пробел: 1234.5 → '1234.50 ₽'.",
+    methods: ['toFixed', 'шаблонная строка'],
+    hint: 'toFixed(2) возвращает строку с двумя знаками. Останется дописать " ₽".',
+    solution: "function formatPrice(n) {\n  return n.toFixed(2) + ' ₽';\n}",
+    tests: [['1234.5', "'1234.50 ₽'"], ['0', "'0.00 ₽'"], ['99.999', "'100.00 ₽'"]],
+  },
+  {
+    id: 's08', topic: 'str', level: 2, fn: 'reverseWords', params: 'str',
+    title: 'Слова задом наперёд',
+    text: "Поменяй порядок слов на обратный: 'hello big world' → 'world big hello'.",
+    methods: ['split', 'reverse', 'join'],
+    hint: 'Режешь по пробелу, переворачиваешь массив, склеиваешь обратно пробелом.',
+    solution: "function reverseWords(str) {\n  return str.split(' ').reverse().join(' ');\n}",
+    tests: [["'hello big world'", "'world big hello'"], ["'one'", "'one'"], ["'a b'", "'b a'"]],
+  },
+  {
+    id: 's09', topic: 'str', level: 3, fn: 'countVowels', params: 'str',
+    title: 'Гласные',
+    text: 'Посчитай английские гласные (a, e, i, o, u) в строке. Заглавные тоже считаются.',
+    methods: ['toLowerCase', 'split', 'filter', 'includes'],
+    hint: "Строка 'aeiou' умеет includes. Оставь через filter только те символы, которые в ней есть.",
+    solution: "function countVowels(str) {\n  return str\n    .toLowerCase()\n    .split('')\n    .filter((ch) => 'aeiou'.includes(ch)).length;\n}",
+    tests: [["'Hello World'", '3'], ["'AEIOU'", '5'], ["'rhythm'", '0'], ["''", '0']],
+  },
+  {
+    id: 's10', topic: 'str', level: 3, fn: 'toCamelCase', params: 'str',
+    title: 'kebab-case → camelCase',
+    text: "Преврати 'background-color' в 'backgroundColor'. Первое слово остаётся с маленькой буквы.",
+    methods: ['split', 'map', 'index', 'toUpperCase', 'join'],
+    hint: 'map передаёт вторым аргументом номер элемента. Слово с номером 0 не трогай, остальным сделай первую букву заглавной.',
+    solution: "function toCamelCase(str) {\n  return str\n    .split('-')\n    .map((word, i) => (i === 0 ? word : word[0].toUpperCase() + word.slice(1)))\n    .join('');\n}",
+    tests: [["'background-color'", "'backgroundColor'"], ["'border-top-left-radius'", "'borderTopLeftRadius'"], ["'color'", "'color'"]],
+  },
+  {
+    id: 's11', topic: 'str', level: 3, fn: 'truncate', params: 'str, max',
+    title: 'Обрезать длинный текст',
+    text: "Если строка длиннее max, оставь первые max символов и добавь '...'. Иначе верни как есть.",
+    methods: ['length', 'slice', 'тернарный оператор'],
+    hint: 'Сначала условие на длину, потом slice(0, max).',
+    solution: "function truncate(str, max) {\n  return str.length > max ? str.slice(0, max) + '...' : str;\n}",
+    tests: [["'Hello world', 5", "'Hello...'"], ["'Hi', 5", "'Hi'"], ["'Exact', 5", "'Exact'"]],
+  },
+  {
+    id: 's12', topic: 'str', level: 3, fn: 'parseTemperature', params: 'text',
+    title: 'Число из текста',
+    text: "Достань число из строки вида '23.5°C' или '-4°C'. Если числа в начале нет, верни null.",
+    methods: ['parseFloat', 'Number.isNaN'],
+    hint: 'parseFloat читает число с начала строки и останавливается на первом лишнем символе. Если числа нет, вернёт NaN.',
+    solution: "function parseTemperature(text) {\n  const value = parseFloat(text);\n  return Number.isNaN(value) ? null : value;\n}",
+    tests: [["'23.5°C'", '23.5'], ["'-4°C'", '-4'], ["'warm'", 'null'], ["'0°C'", '0']],
+  },
+  {
+    id: 's13', topic: 'str', level: 3, fn: 'formatTime', params: 'h, m',
+    title: 'Время с нулями',
+    text: "Верни время в формате ЧЧ:ММ: (9, 5) → '09:05'.",
+    methods: ['String', 'padStart'],
+    hint: "padStart работает у строк, поэтому сначала String(h). Дополнить до 2 символов нулём: padStart(2, '0').",
+    solution: "function formatTime(h, m) {\n  return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');\n}",
+    tests: [['9, 5', "'09:05'"], ['12, 30', "'12:30'"], ['0, 0', "'00:00'"]],
+  },
+  {
+    id: 's14', topic: 'str', level: 3, fn: 'roundTo', params: 'n, digits',
+    title: 'Округлить до знаков',
+    text: 'Округли число до digits знаков после точки и верни число, а не строку.',
+    methods: ['toFixed', 'Number'],
+    hint: 'toFixed даёт строку. Оберни результат в Number().',
+    solution: "function roundTo(n, digits) {\n  return Number(n.toFixed(digits));\n}",
+    tests: [['3.14159, 2', '3.14'], ['2.5, 0', '3'], ['10, 3', '10'], ['1.005, 1', '1']],
+  },
+  {
+    id: 's15', topic: 'str', level: 4, fn: 'compressSpaces', params: 'str',
+    title: 'Лишние пробелы',
+    text: "Убери пробелы по краям и замени несколько пробелов подряд одним: '  a   b  ' → 'a b'.",
+    methods: ['trim', 'split', 'filter', 'join'],
+    hint: "После split(' ') на месте лишних пробелов появятся пустые строки ''. filter(Boolean) их выбросит.",
+    solution: "function compressSpaces(str) {\n  return str.split(' ').filter(Boolean).join(' ');\n}",
+    tests: [["'  a   b  '", "'a b'"], ["'hello'", "'hello'"], ["'one  two   three'", "'one two three'"], ["'   '", "''"]],
+  },
+  {
+    id: 's16', topic: 'str', level: 4, fn: 'longestWord', params: 'str',
+    title: 'Самое длинное слово',
+    text: 'Верни самое длинное слово. Если таких несколько, верни первое из них.',
+    methods: ['split', 'reduce'],
+    hint: 'reduce с накопителем «лучшее слово»: заменяй его, только если новое строго длиннее.',
+    solution: "function longestWord(str) {\n  return str.split(' ').reduce((best, word) => (word.length > best.length ? word : best), '');\n}",
+    tests: [["'I love javascript a lot'", "'javascript'"], ["'cat dog'", "'cat'"], ["'one'", "'one'"]],
+  },
+  {
+    id: 's17', topic: 'str', level: 4, fn: 'isAnagram', params: 'a, b',
+    title: 'Анаграмма',
+    text: "Верни true, если b составлено из тех же букв, что и a ('listen' и 'silent'). Регистр не важен.",
+    methods: ['toLowerCase', 'split', 'sort', 'join'],
+    hint: 'Если отсортировать буквы обоих слов, у анаграмм получится одна и та же строка.',
+    solution: "function isAnagram(a, b) {\n  const normalize = (s) => s.toLowerCase().split('').sort().join('');\n  return normalize(a) === normalize(b);\n}",
+    tests: [["'listen', 'silent'", 'true'], ["'Night', 'Thing'", 'true'], ["'cat', 'act '", 'false'], ["'apple', 'paple'", 'true'], ["'abc', 'abd'", 'false']],
+  },
+  {
+    id: 's18', topic: 'str', level: 5, fn: 'caesar', params: 'str, shift',
+    title: 'Шифр Цезаря',
+    text: "Сдвинь каждую строчную английскую букву на shift позиций по алфавиту, после 'z' снова 'a'. Остальные символы не меняй.",
+    methods: ['charCodeAt', 'String.fromCharCode', '%', 'map'],
+    hint: "Код 'a' = 97. Номер буквы в алфавите: code - 97. Новый номер: (номер + shift) % 26. Обратно: String.fromCharCode(97 + новый).",
+    solution: "function caesar(str, shift) {\n  return str\n    .split('')\n    .map((ch) => {\n      if (ch < 'a' || ch > 'z') return ch;\n      const index = (ch.charCodeAt(0) - 97 + shift) % 26;\n      return String.fromCharCode(97 + index);\n    })\n    .join('');\n}",
+    tests: [["'abc', 1", "'bcd'"], ["'xyz', 3", "'abc'"], ["'hello, world!', 13", "'uryyb, jbeyq!'"], ["'a', 26", "'a'"]],
+  },
+
+  // ───────── ARRAYS ─────────
+  {
+    id: 'a01', topic: 'arr', level: 1, fn: 'sum', params: 'arr',
+    title: 'Сумма',
+    text: 'Верни сумму чисел массива. Для пустого массива 0.',
+    methods: ['reduce'],
+    hint: 'reduce((total, n) => total + n, 0). Ноль в конце и есть ответ для пустого массива.',
+    solution: "function sum(arr) {\n  return arr.reduce((total, n) => total + n, 0);\n}",
+    tests: [['[1, 2, 3]', '6'], ['[]', '0'], ['[-5, 5, 10]', '10']],
+  },
+  {
+    id: 'a02', topic: 'arr', level: 1, fn: 'doubleAll', params: 'arr',
+    title: 'Удвоить всё',
+    text: 'Верни новый массив, где каждое число умножено на 2.',
+    methods: ['map'],
+    hint: 'map превращает каждый элемент: (n) => n * 2.',
+    solution: "function doubleAll(arr) {\n  return arr.map((n) => n * 2);\n}",
+    tests: [['[1, 2, 3]', '[2, 4, 6]'], ['[]', '[]'], ['[-1, 0]', '[-2, 0]']],
+  },
+  {
+    id: 'a03', topic: 'arr', level: 1, fn: 'onlyPositive', params: 'arr',
+    title: 'Только положительные',
+    text: 'Оставь в массиве только числа больше нуля.',
+    methods: ['filter'],
+    hint: 'filter оставляет элементы, для которых функция вернула true.',
+    solution: "function onlyPositive(arr) {\n  return arr.filter((n) => n > 0);\n}",
+    tests: [['[-2, 0, 3, 5, -1]', '[3, 5]'], ['[-1]', '[]'], ['[1, 2]', '[1, 2]']],
+  },
+  {
+    id: 'a04', topic: 'arr', level: 1, fn: 'findLong', params: 'words, n',
+    title: 'Первое длинное слово',
+    text: 'Верни первое слово длиннее n символов. Если такого нет, верни undefined.',
+    methods: ['find'],
+    hint: 'find возвращает первый подходящий элемент или undefined сам по себе.',
+    solution: "function findLong(words, n) {\n  return words.find((word) => word.length > n);\n}",
+    tests: [["['hi', 'hello', 'javascript'], 3", "'hello'"], ["['a', 'b'], 3", 'undefined'], ["['abcd'], 3", "'abcd'"]],
+  },
+  {
+    id: 'a05', topic: 'arr', level: 2, fn: 'hasNegative', params: 'arr',
+    title: 'Есть ли отрицательное',
+    text: 'Верни true, если в массиве есть хотя бы одно отрицательное число.',
+    methods: ['some'],
+    hint: 'some — «хотя бы один подходит». every — «все подходят».',
+    solution: "function hasNegative(arr) {\n  return arr.some((n) => n < 0);\n}",
+    tests: [['[1, -2, 3]', 'true'], ['[1, 2, 3]', 'false'], ['[]', 'false']],
+  },
+  {
+    id: 'a06', topic: 'arr', level: 2, fn: 'allEven', params: 'arr',
+    title: 'Все чётные',
+    text: 'Верни true, если все числа чётные.',
+    methods: ['every', '%'],
+    hint: 'Чётное число: n % 2 === 0.',
+    solution: "function allEven(arr) {\n  return arr.every((n) => n % 2 === 0);\n}",
+    tests: [['[2, 4, 6]', 'true'], ['[2, 3]', 'false'], ['[]', 'true']],
+  },
+  {
+    id: 'a07', topic: 'arr', level: 2, fn: 'maxValue', params: 'arr',
+    title: 'Максимум',
+    text: 'Верни самое большое число. Для пустого массива верни null.',
+    methods: ['Math.max', '...spread'],
+    hint: 'Math.max принимает числа через запятую, а не массив. Разложи массив: Math.max(...arr).',
+    solution: "function maxValue(arr) {\n  if (arr.length === 0) return null;\n  return Math.max(...arr);\n}",
+    tests: [['[3, 9, 2]', '9'], ['[-5, -1]', '-1'], ['[]', 'null']],
+  },
+  {
+    id: 'a08', topic: 'arr', level: 2, fn: 'sortNumbers', params: 'arr',
+    title: 'Сортировка без порчи',
+    text: 'Верни отсортированную по возрастанию копию. Исходный массив менять нельзя.',
+    methods: ['[...arr]', 'sort((a, b) => a - b)'],
+    hint: 'sort меняет массив, на котором вызван. Поэтому сначала копия [...arr]. И не забудь функцию сравнения для чисел.',
+    solution: "function sortNumbers(arr) {\n  return [...arr].sort((a, b) => a - b);\n}",
+    tests: [['[10, 1, 5]', '[1, 5, 10]'], ['[3, 20, 100]', '[3, 20, 100]'], ['@const a = [3, 1, 2]; sortNumbers(a); a', '[3, 1, 2]', 'исходный массив не изменился']],
+  },
+  {
+    id: 'a09', topic: 'arr', level: 2, fn: 'lastN', params: 'arr, n',
+    title: 'Последние N',
+    text: 'Верни последние n элементов массива (n ≥ 1).',
+    methods: ['slice'],
+    hint: 'slice с отрицательным числом считает с конца.',
+    solution: "function lastN(arr, n) {\n  return arr.slice(-n);\n}",
+    tests: [['[1, 2, 3, 4], 2', '[3, 4]'], ['[1, 2], 5', '[1, 2]'], ["['a', 'b', 'c'], 1", "['c']"]],
+  },
+  {
+    id: 'a10', topic: 'arr', level: 2, fn: 'withoutDuplicates', params: 'arr',
+    title: 'Без повторов (filter)',
+    text: 'Убери повторы, сохранив порядок первого появления. Решай через filter и indexOf, без Set.',
+    methods: ['filter', 'indexOf', 'index'],
+    hint: 'Элемент встречается впервые, если indexOf(элемент) равен его собственному номеру.',
+    solution: "function withoutDuplicates(arr) {\n  return arr.filter((item, i) => arr.indexOf(item) === i);\n}",
+    tests: [['[1, 2, 1, 3, 2]', '[1, 2, 3]'], ["['a', 'a']", "['a']"], ['[]', '[]']],
+  },
+  {
+    id: 'a11', topic: 'arr', level: 3, fn: 'removeAt', params: 'arr, index',
+    title: 'Удалить по номеру',
+    text: 'Верни новый массив без элемента с номером index. Исходный не меняй.',
+    methods: ['slice', '...spread', 'filter'],
+    hint: 'Вариант 1: [...arr.slice(0, index), ...arr.slice(index + 1)]. Вариант 2: filter по номеру.',
+    solution: "function removeAt(arr, index) {\n  return arr.filter((_, i) => i !== index);\n}",
+    tests: [["['a', 'b', 'c'], 1", "['a', 'c']"], ['[1, 2, 3], 0', '[2, 3]'], ['@const a = [1, 2, 3]; removeAt(a, 1); a', '[1, 2, 3]', 'исходный массив не изменился']],
+  },
+  {
+    id: 'a12', topic: 'arr', level: 3, fn: 'average', params: 'grades',
+    title: 'Средний балл',
+    text: 'Верни среднее арифметическое, округлённое до одного знака (числом). Пустой массив → 0.',
+    methods: ['reduce', 'length', 'toFixed', 'Number'],
+    hint: 'Сумма через reduce, делишь на length, округляешь как в задаче «Округлить до знаков».',
+    solution: "function average(grades) {\n  if (grades.length === 0) return 0;\n  const total = grades.reduce((sum, g) => sum + g, 0);\n  return Number((total / grades.length).toFixed(1));\n}",
+    tests: [['[5, 4, 4]', '4.3'], ['[10]', '10'], ['[]', '0'], ['[3, 4]', '3.5']],
+  },
+  {
+    id: 'a13', topic: 'arr', level: 3, fn: 'range', params: 'start, end',
+    title: 'Диапазон',
+    text: 'Верни массив чисел от start до end включительно.',
+    methods: ['Array.from', 'for'],
+    hint: 'Array.from({ length: N }, (_, i) => ...) создаёт массив длины N и заполняет его по номеру i.',
+    solution: "function range(start, end) {\n  return Array.from({ length: end - start + 1 }, (_, i) => start + i);\n}",
+    tests: [['1, 5', '[1, 2, 3, 4, 5]'], ['-2, 1', '[-2, -1, 0, 1]'], ['3, 3', '[3]']],
+  },
+  {
+    id: 'a14', topic: 'arr', level: 3, fn: 'intersection', params: 'a, b',
+    title: 'Общие элементы',
+    text: 'Верни элементы, которые есть в обоих массивах, в порядке массива a.',
+    methods: ['filter', 'includes'],
+    hint: 'Пройди по a и оставь то, что b.includes(...).',
+    solution: "function intersection(a, b) {\n  return a.filter((item) => b.includes(item));\n}",
+    tests: [['[1, 2, 3, 4], [4, 2, 9]', '[2, 4]'], ['[1], [2]', '[]'], ["['x', 'y'], ['y', 'x']", "['x', 'y']"]],
+  },
+  {
+    id: 'a15', topic: 'arr', level: 3, fn: 'chunk', params: 'arr, size',
+    title: 'Разбить на куски',
+    text: 'Разбей массив на куски по size элементов. Последний кусок может быть короче.',
+    methods: ['for', 'slice', 'push'],
+    hint: 'Цикл с шагом size: for (let i = 0; i < arr.length; i += size) и внутри push(arr.slice(i, i + size)).',
+    solution: "function chunk(arr, size) {\n  const result = [];\n  for (let i = 0; i < arr.length; i += size) {\n    result.push(arr.slice(i, i + size));\n  }\n  return result;\n}",
+    tests: [['[1, 2, 3, 4, 5], 2', '[[1, 2], [3, 4], [5]]'], ['[1, 2, 3], 3', '[[1, 2, 3]]'], ['[], 2', '[]']],
+  },
+  {
+    id: 'a16', topic: 'arr', level: 3, fn: 'flattenAll', params: 'arr',
+    title: 'Расплющить всё',
+    text: 'Сделай из массива любой вложенности плоский массив.',
+    methods: ['flat(Infinity)'],
+    hint: 'flat() раскрывает один уровень. Ему можно передать глубину, в том числе Infinity.',
+    solution: "function flattenAll(arr) {\n  return arr.flat(Infinity);\n}",
+    tests: [['[1, [2, [3, [4]]]]', '[1, 2, 3, 4]'], ['[[1], [2]]', '[1, 2]'], ['[]', '[]']],
+  },
+  {
+    id: 'a17', topic: 'arr', level: 4, fn: 'runningTotal', params: 'arr',
+    title: 'Накопительная сумма',
+    text: 'Каждый элемент результата — сумма всех чисел до него включительно: [1, 2, 3] → [1, 3, 6].',
+    methods: ['map', 'переменная-накопитель', 'reduce'],
+    hint: 'Заведи let total = 0 и в map делай total += n, возвращая total.',
+    solution: "function runningTotal(arr) {\n  let total = 0;\n  return arr.map((n) => {\n    total += n;\n    return total;\n  });\n}",
+    tests: [['[1, 2, 3]', '[1, 3, 6]'], ['[5, -5, 10]', '[5, 0, 10]'], ['[]', '[]']],
+  },
+  {
+    id: 'a18', topic: 'arr', level: 4, fn: 'rotate', params: 'arr, k',
+    title: 'Сдвиг по кругу',
+    text: 'Сдвинь элементы вправо на k позиций по кругу: ([1, 2, 3, 4, 5], 2) → [4, 5, 1, 2, 3]. k может быть больше длины.',
+    methods: ['%', 'slice', '...spread'],
+    hint: 'Сначала k % arr.length. Потом склей хвост длиной k и начало.',
+    solution: "function rotate(arr, k) {\n  if (arr.length === 0) return [];\n  const shift = k % arr.length;\n  if (shift === 0) return [...arr];\n  return [...arr.slice(-shift), ...arr.slice(0, -shift)];\n}",
+    tests: [['[1, 2, 3, 4, 5], 2', '[4, 5, 1, 2, 3]'], ['[1, 2, 3], 3', '[1, 2, 3]'], ['[1, 2, 3], 4', '[3, 1, 2]'], ['[], 1', '[]']],
+  },
+  {
+    id: 'a19', topic: 'arr', level: 4, fn: 'secondLargest', params: 'arr',
+    title: 'Второй по величине',
+    text: 'Верни второе по величине различное число. Если его нет, верни null.',
+    methods: ['Set', 'sort', '[...]'],
+    hint: 'Убери повторы, отсортируй по убыванию, возьми элемент с номером 1.',
+    solution: "function secondLargest(arr) {\n  const sorted = [...new Set(arr)].sort((a, b) => b - a);\n  return sorted.length > 1 ? sorted[1] : null;\n}",
+    tests: [['[3, 7, 7, 5]', '5'], ['[1, 1]', 'null'], ['[10, 20]', '10'], ['[]', 'null']],
+  },
+  {
+    id: 'a20', topic: 'arr', level: 4, fn: 'findPair', params: 'arr, target',
+    title: 'Пара с суммой',
+    text: 'Найди первую пару чисел (по порядку), сумма которых равна target, и верни [a, b]. Если пары нет, верни null.',
+    methods: ['for внутри for', 'return из цикла'],
+    hint: 'Два цикла: i от 0, j от i + 1. Как только arr[i] + arr[j] === target, сразу return.',
+    solution: "function findPair(arr, target) {\n  for (let i = 0; i < arr.length; i += 1) {\n    for (let j = i + 1; j < arr.length; j += 1) {\n      if (arr[i] + arr[j] === target) return [arr[i], arr[j]];\n    }\n  }\n  return null;\n}",
+    tests: [['[2, 7, 11, 15], 9', '[2, 7]'], ['[1, 2, 3], 10', 'null'], ['[3, 3], 6', '[3, 3]'], ['[1, 5, 2, 4], 6', '[1, 5]']],
+  },
+  {
+    id: 'a21', topic: 'arr', level: 5, fn: 'transpose', params: 'matrix',
+    title: 'Транспонировать матрицу',
+    text: 'Поменяй строки и столбцы местами: [[1, 2, 3], [4, 5, 6]] → [[1, 4], [2, 5], [3, 6]].',
+    methods: ['map', 'index', 'matrix[i][j]'],
+    hint: 'Новых строк столько, сколько столбцов в первой строке. Строка j нового массива = matrix.map((row) => row[j]).',
+    solution: "function transpose(matrix) {\n  if (matrix.length === 0) return [];\n  return matrix[0].map((_, j) => matrix.map((row) => row[j]));\n}",
+    tests: [['[[1, 2, 3], [4, 5, 6]]', '[[1, 4], [2, 5], [3, 6]]'], ['[[1]]', '[[1]]'], ['[]', '[]']],
+  },
+
+  // ───────── OBJECTS, MAP & SET ─────────
+  {
+    id: 'o01', topic: 'obj', level: 1, fn: 'getKeys', params: 'obj',
+    title: 'Ключи объекта',
+    text: 'Верни массив имён свойств объекта.',
+    methods: ['Object.keys'],
+    hint: 'Object.keys(obj) — ровно то, что нужно.',
+    solution: "function getKeys(obj) {\n  return Object.keys(obj);\n}",
+    tests: [["{ a: 1, b: 2 }", "['a', 'b']"], ['{}', '[]']],
+  },
+  {
+    id: 'o02', topic: 'obj', level: 1, fn: 'countProps', params: 'obj',
+    title: 'Сколько свойств',
+    text: 'Верни количество свойств объекта.',
+    methods: ['Object.keys', 'length'],
+    hint: 'У объекта нет length, а у массива ключей есть.',
+    solution: "function countProps(obj) {\n  return Object.keys(obj).length;\n}",
+    tests: [["{ name: 'Ann', age: 20, city: 'Minsk' }", '3'], ['{}', '0']],
+  },
+  {
+    id: 'o03', topic: 'obj', level: 1, fn: 'hasProp', params: 'obj, key',
+    title: 'Есть ли свойство',
+    text: 'Верни true, если у объекта есть собственное свойство key, даже если его значение undefined или 0.',
+    methods: ['Object.hasOwn', 'in'],
+    hint: 'obj[key] не подходит: для значения 0 он даст «ложь». Нужен Object.hasOwn(obj, key).',
+    solution: "function hasProp(obj, key) {\n  return Object.hasOwn(obj, key);\n}",
+    tests: [["{ a: 0 }, 'a'", 'true'], ["{ a: undefined }, 'a'", 'true'], ["{ a: 1 }, 'b'", 'false']],
+  },
+  {
+    id: 'o04', topic: 'obj', level: 2, fn: 'sumValues', params: 'obj',
+    title: 'Сумма значений',
+    text: 'Все значения объекта — числа. Верни их сумму.',
+    methods: ['Object.values', 'reduce'],
+    hint: 'Object.values даёт массив значений, дальше как в задаче «Сумма».',
+    solution: "function sumValues(obj) {\n  return Object.values(obj).reduce((total, n) => total + n, 0);\n}",
+    tests: [['{ apples: 3, pears: 5 }', '8'], ['{}', '0']],
+  },
+  {
+    id: 'o05', topic: 'obj', level: 2, fn: 'pick', params: 'obj, keys',
+    title: 'Взять только нужное',
+    text: "Верни новый объект только со свойствами из массива keys (которые есть в obj).",
+    methods: ['forEach', 'obj[key]', 'Object.hasOwn'],
+    hint: 'Создай пустой result. Для каждого ключа из keys, если он есть в obj, скопируй значение.',
+    solution: "function pick(obj, keys) {\n  const result = {};\n  keys.forEach((key) => {\n    if (Object.hasOwn(obj, key)) result[key] = obj[key];\n  });\n  return result;\n}",
+    tests: [["{ a: 1, b: 2, c: 3 }, ['a', 'c']", '{ a: 1, c: 3 }'], ["{ a: 1 }, ['z']", '{}']],
+  },
+  {
+    id: 'o06', topic: 'obj', level: 2, fn: 'omit', params: 'obj, keys',
+    title: 'Убрать лишнее',
+    text: 'Верни копию объекта без свойств из keys. Исходный объект не меняй.',
+    methods: ['{ ...obj }', 'delete', 'forEach'],
+    hint: 'Скопируй через { ...obj }, потом delete copy[key] для каждого ключа.',
+    solution: "function omit(obj, keys) {\n  const copy = { ...obj };\n  keys.forEach((key) => {\n    delete copy[key];\n  });\n  return copy;\n}",
+    tests: [["{ a: 1, b: 2, c: 3 }, ['b']", '{ a: 1, c: 3 }'], ["{ a: 1 }, []", '{ a: 1 }'], ["@const o = { a: 1, b: 2 }; omit(o, ['a']); o", '{ a: 1, b: 2 }', 'исходный объект не изменился']],
+  },
+  {
+    id: 'o07', topic: 'obj', level: 2, fn: 'withDefaults', params: 'options, defaults',
+    title: 'Настройки по умолчанию',
+    text: 'Верни объект со всеми свойствами defaults, поверх которых записаны options.',
+    methods: ['{ ...a, ...b }', 'Object.assign'],
+    hint: 'При spread побеждает то, что написано правее.',
+    solution: "function withDefaults(options, defaults) {\n  return { ...defaults, ...options };\n}",
+    tests: [["{ color: 'red' }, { color: 'black', size: 12 }", "{ color: 'red', size: 12 }"], ["{}, { a: 1 }", '{ a: 1 }']],
+  },
+  {
+    id: 'o08', topic: 'obj', level: 2, fn: 'invert', params: 'obj',
+    title: 'Поменять ключи и значения',
+    text: "{ a: 'x', b: 'y' } → { x: 'a', y: 'b' }.",
+    methods: ['Object.entries', 'map', 'Object.fromEntries'],
+    hint: 'entries даёт пары [ключ, значение]. Переверни каждую пару и собери обратно fromEntries.',
+    solution: "function invert(obj) {\n  return Object.fromEntries(Object.entries(obj).map(([key, value]) => [value, key]));\n}",
+    tests: [["{ a: 'x', b: 'y' }", "{ x: 'a', y: 'b' }"], ['{}', '{}']],
+  },
+  {
+    id: 'o09', topic: 'obj', level: 2, fn: 'uniqueCount', params: 'arr',
+    title: 'Сколько разных',
+    text: 'Верни количество различных значений в массиве.',
+    methods: ['new Set', 'size'],
+    hint: 'Set хранит каждое значение один раз. У Set не length, а size.',
+    solution: "function uniqueCount(arr) {\n  return new Set(arr).size;\n}",
+    tests: [['[1, 2, 2, 3, 3, 3]', '3'], ['[]', '0'], ["['a', 'A']", '2']],
+  },
+  {
+    id: 'o10', topic: 'obj', level: 3, fn: 'countLetters', params: 'str',
+    title: 'Счётчик букв',
+    text: "Верни объект, где ключ — символ, значение — сколько раз он встретился: 'aab' → { a: 2, b: 1 }.",
+    methods: ['объект-счётчик', 'split', 'forEach'],
+    hint: 'counts[ch] = (counts[ch] || 0) + 1 — тот самый шаблон из шпаргалки.',
+    solution: "function countLetters(str) {\n  const counts = {};\n  str.split('').forEach((ch) => {\n    counts[ch] = (counts[ch] || 0) + 1;\n  });\n  return counts;\n}",
+    tests: [["'aab'", '{ a: 2, b: 1 }'], ["''", '{}'], ["'hello'", '{ h: 1, e: 1, l: 2, o: 1 }']],
+  },
+  {
+    id: 'o11', topic: 'obj', level: 3, fn: 'groupBy', params: 'items, key',
+    title: 'Группировка',
+    text: "Сгруппируй массив объектов по значению свойства key: результат — объект { значение: [объекты] }.",
+    methods: ['reduce', 'forEach', '|| []'],
+    hint: 'Для каждого item: const group = item[key]; если result[group] нет, создай []; затем push.',
+    solution: "function groupBy(items, key) {\n  const result = {};\n  items.forEach((item) => {\n    const group = item[key];\n    if (!result[group]) result[group] = [];\n    result[group].push(item);\n  });\n  return result;\n}",
+    tests: [["[{ n: 'Ann', city: 'Minsk' }, { n: 'Bob', city: 'Riga' }, { n: 'Kate', city: 'Minsk' }], 'city'", "{ Minsk: [{ n: 'Ann', city: 'Minsk' }, { n: 'Kate', city: 'Minsk' }], Riga: [{ n: 'Bob', city: 'Riga' }] }"], ["[], 'x'", '{}']],
+  },
+  {
+    id: 'o12', topic: 'obj', level: 3, fn: 'toMap', params: 'obj',
+    title: 'Объект → Map',
+    text: 'Преврати объект в Map с теми же парами ключ–значение.',
+    methods: ['new Map', 'Object.entries'],
+    hint: 'new Map умеет принимать массив пар — ровно то, что возвращает Object.entries.',
+    solution: "function toMap(obj) {\n  return new Map(Object.entries(obj));\n}",
+    tests: [['{ a: 1, b: 2 }', "new Map([['a', 1], ['b', 2]])"], ['{}', 'new Map()']],
+  },
+  {
+    id: 'o13', topic: 'obj', level: 3, fn: 'frozenCopy', params: 'obj',
+    title: 'Замороженная копия',
+    text: 'Верни замороженную копию объекта. Сам исходный объект замораживать нельзя.',
+    methods: ['{ ...obj }', 'Object.freeze', 'Object.isFrozen'],
+    hint: 'freeze замораживает именно тот объект, который ему дали. Поэтому сначала копия.',
+    solution: "function frozenCopy(obj) {\n  return Object.freeze({ ...obj });\n}",
+    tests: [['@Object.isFrozen(frozenCopy({ a: 1 }))', 'true', 'результат заморожен'], ['@const o = { a: 1 }; frozenCopy(o); Object.isFrozen(o)', 'false', 'исходный объект не заморожен'], ['{ a: 1, b: 2 }', '{ a: 1, b: 2 }']],
+  },
+  {
+    id: 'o14', topic: 'obj', level: 4, fn: 'mostFrequent', params: 'arr',
+    title: 'Самый частый',
+    text: 'Верни значение, которое встречается чаще всего. При равенстве — то, что встретилось раньше. Для пустого массива null. Используй Map, чтобы 1 и "1" считались разными.',
+    methods: ['new Map', 'get', 'set', 'forEach'],
+    hint: 'map.set(x, (map.get(x) || 0) + 1). Потом пройди по массиву ещё раз и найди элемент с наибольшим счётом.',
+    solution: "function mostFrequent(arr) {\n  const counts = new Map();\n  arr.forEach((x) => counts.set(x, (counts.get(x) || 0) + 1));\n  let best = null;\n  let bestCount = 0;\n  counts.forEach((count, x) => {\n    if (count > bestCount) {\n      best = x;\n      bestCount = count;\n    }\n  });\n  return best;\n}",
+    tests: [["['a', 'b', 'a', 'c']", "'a'"], ["[1, '1', '1']", "'1'"], ['[3, 4, 4, 3]', '3'], ['[]', 'null']],
+  },
+  {
+    id: 'o15', topic: 'obj', level: 4, fn: 'getIn', params: 'obj, path',
+    title: 'Значение по пути',
+    text: "Достань значение по пути вида 'user.address.city'. Если чего-то по дороге нет, верни undefined без ошибки.",
+    methods: ['split', 'reduce', '?.'],
+    hint: "reduce по частям пути, накопитель — текущий объект: (current, key) => current?.[key].",
+    solution: "function getIn(obj, path) {\n  return path.split('.').reduce((current, key) => current?.[key], obj);\n}",
+    tests: [["{ user: { address: { city: 'Minsk' } } }, 'user.address.city'", "'Minsk'"], ["{ a: 1 }, 'a.b.c'", 'undefined'], ["{ a: { b: 0 } }, 'a.b'", '0']],
+  },
+  {
+    id: 'o16', topic: 'obj', level: 4, fn: 'symmetricDiff', params: 'a, b',
+    title: 'Есть только в одном',
+    text: 'Верни Set значений, которые есть ровно в одном из двух массивов.',
+    methods: ['new Set', 'has', 'filter', '...spread'],
+    hint: 'Сделай Set из каждого массива. Возьми из a то, чего нет в setB, и из b то, чего нет в setA.',
+    solution: "function symmetricDiff(a, b) {\n  const setA = new Set(a);\n  const setB = new Set(b);\n  return new Set([...setA].filter((x) => !setB.has(x)).concat([...setB].filter((x) => !setA.has(x))));\n}",
+    tests: [['[1, 2, 3], [2, 3, 4]', 'new Set([1, 4])'], ['[1, 1], [1]', 'new Set()'], ["['a'], []", "new Set(['a'])"]],
+  },
+  {
+    id: 'o17', topic: 'obj', level: 4, fn: 'shallowEqual', params: 'a, b',
+    title: 'Сравнить объекты',
+    text: 'Верни true, если у объектов одинаковый набор ключей и значения по ним равны через ===.',
+    methods: ['Object.keys', 'length', 'every'],
+    hint: 'Сначала сравни количество ключей. Потом every по ключам a: значение то же и ключ есть в b.',
+    solution: "function shallowEqual(a, b) {\n  const keysA = Object.keys(a);\n  if (keysA.length !== Object.keys(b).length) return false;\n  return keysA.every((key) => Object.hasOwn(b, key) && a[key] === b[key]);\n}",
+    tests: [['{ a: 1, b: 2 }, { b: 2, a: 1 }', 'true'], ['{ a: 1 }, { a: 1, b: 2 }', 'false'], ["{ a: 1 }, { a: '1' }", 'false'], ['{ a: undefined }, { b: undefined }', 'false']],
+  },
+  {
+    id: 'o18', topic: 'obj', level: 5, fn: 'deepClone', params: 'value',
+    title: 'Глубокая копия',
+    text: 'Сделай полную копию значения: вложенные объекты и массивы тоже должны быть новыми. Без structuredClone и JSON.',
+    methods: ['рекурсия', 'Array.isArray', 'typeof', 'Object.entries'],
+    hint: 'Примитив или null — вернуть как есть. Массив — map(deepClone). Объект — пройти по entries и скопировать каждое значение через deepClone.',
+    solution: "function deepClone(value) {\n  if (value === null || typeof value !== 'object') return value;\n  if (Array.isArray(value)) return value.map(deepClone);\n  const copy = {};\n  Object.entries(value).forEach(([key, v]) => {\n    copy[key] = deepClone(v);\n  });\n  return copy;\n}",
+    tests: [['{ a: [1, { b: 2 }] }', '{ a: [1, { b: 2 }] }'], ['@const o = { a: { b: 1 } }; const c = deepClone(o); c.a.b = 99; o.a.b', '1', 'вложенный объект скопирован'], ['@const o = { list: [1] }; deepClone(o).list !== o.list', 'true', 'вложенный массив новый'], ['5', '5'], ['null', 'null']],
+  },
+
+  // ───────── COMBO ─────────
+  {
+    id: 'c01', topic: 'combo', level: 3, fn: 'cartTotal', params: 'items',
+    title: 'Сумма корзины',
+    text: 'items — массив { price, qty }. Верни общую сумму, округлённую до копеек (числом).',
+    methods: ['reduce', 'toFixed', 'Number'],
+    hint: 'reduce((sum, item) => sum + item.price * item.qty, 0), затем округление до 2 знаков.',
+    solution: "function cartTotal(items) {\n  const total = items.reduce((sum, item) => sum + item.price * item.qty, 0);\n  return Number(total.toFixed(2));\n}",
+    tests: [['[{ price: 10, qty: 2 }, { price: 0.1, qty: 3 }]', '20.3'], ['[]', '0'], ['[{ price: 99.99, qty: 1 }]', '99.99']],
+  },
+  {
+    id: 'c02', topic: 'combo', level: 3, fn: 'normalizePhone', params: 'phone',
+    title: 'Номер телефона',
+    text: "Оставь в номере только цифры: '+7 (912) 345-67-89' → '79123456789'.",
+    methods: ['split', 'filter', 'join', 'replace'],
+    hint: "Цифра — это символ между '0' и '9'. Или регулярное выражение: replace(/\\D/g, '').",
+    solution: "function normalizePhone(phone) {\n  return phone\n    .split('')\n    .filter((ch) => ch >= '0' && ch <= '9')\n    .join('');\n}",
+    tests: [["'+7 (912) 345-67-89'", "'79123456789'"], ["'8-800-555-35-35'", "'88005553535'"], ["'abc'", "''"]],
+  },
+  {
+    id: 'c03', topic: 'combo', level: 3, fn: 'parseQuery', params: 'query',
+    title: 'Разобрать строку запроса',
+    text: "'page=2&sort=name' → { page: '2', sort: 'name' }. Пустая строка → {}.",
+    methods: ['split', 'map', 'Object.fromEntries', 'filter'],
+    hint: "Режь по '&', каждый кусок по '=' — получатся пары. Пары собирает Object.fromEntries.",
+    solution: "function parseQuery(query) {\n  if (query === '') return {};\n  return Object.fromEntries(query.split('&').map((part) => part.split('=')));\n}",
+    tests: [["'page=2&sort=name'", "{ page: '2', sort: 'name' }"], ["''", '{}'], ["'q=js'", "{ q: 'js' }"]],
+  },
+  {
+    id: 'c04', topic: 'combo', level: 3, fn: 'buildQuery', params: 'params',
+    title: 'Собрать строку запроса',
+    text: "Обратная задача: { page: 2, sort: 'name' } → 'page=2&sort=name'.",
+    methods: ['Object.entries', 'map', 'join'],
+    hint: "entries → каждую пару в строку key + '=' + value → join('&').",
+    solution: "function buildQuery(params) {\n  return Object.entries(params)\n    .map(([key, value]) => key + '=' + value)\n    .join('&');\n}",
+    tests: [["{ page: 2, sort: 'name' }", "'page=2&sort=name'"], ['{}', "''"]],
+  },
+  {
+    id: 'c05', topic: 'combo', level: 3, fn: 'stats', params: 'arr',
+    title: 'Статистика',
+    text: 'Верни объект { min, max, avg } для непустого массива чисел. avg — без округления.',
+    methods: ['Math.min', 'Math.max', 'reduce', 'сокращённая запись объекта'],
+    hint: 'Если имя переменной совпадает с именем свойства, можно писать return { min, max, avg }.',
+    solution: "function stats(arr) {\n  const min = Math.min(...arr);\n  const max = Math.max(...arr);\n  const avg = arr.reduce((s, n) => s + n, 0) / arr.length;\n  return { min, max, avg };\n}",
+    tests: [['[1, 2, 3, 6]', '{ min: 1, max: 6, avg: 3 }'], ['[5]', '{ min: 5, max: 5, avg: 5 }']],
+  },
+  {
+    id: 'c06', topic: 'combo', level: 4, fn: 'sortUsers', params: 'users',
+    title: 'Сортировка пользователей',
+    text: 'Отсортируй копию массива { name, age } по возрасту, а при равном возрасте — по имени по алфавиту.',
+    methods: ['[...arr]', 'sort', 'localeCompare', '||'],
+    hint: 'В sort: a.age - b.age || a.name.localeCompare(b.name). Если разница возрастов 0, сработает правая часть.',
+    solution: "function sortUsers(users) {\n  return [...users].sort((a, b) => a.age - b.age || a.name.localeCompare(b.name));\n}",
+    tests: [["[{ name: 'Kate', age: 25 }, { name: 'Ann', age: 30 }, { name: 'Bob', age: 25 }]", "[{ name: 'Bob', age: 25 }, { name: 'Kate', age: 25 }, { name: 'Ann', age: 30 }]"], ["@const u = [{ name: 'B', age: 2 }, { name: 'A', age: 1 }]; sortUsers(u); u[0].name", "'B'", 'исходный массив не изменился']],
+  },
+  {
+    id: 'c07', topic: 'combo', level: 4, fn: 'passwordErrors', params: 'password',
+    title: 'Проверка пароля',
+    text: "Верни массив ошибок в таком порядке: 'too short' (меньше 8 символов), 'no digit' (нет цифры), 'no uppercase' (нет заглавной латинской буквы). Если всё хорошо — [].",
+    methods: ['push', 'split', 'some', 'length'],
+    hint: "Проверки по очереди, каждая делает errors.push(...). Цифра: ch >= '0' && ch <= '9'. Заглавная: ch >= 'A' && ch <= 'Z'.",
+    solution: "function passwordErrors(password) {\n  const errors = [];\n  const chars = password.split('');\n  if (password.length < 8) errors.push('too short');\n  if (!chars.some((ch) => ch >= '0' && ch <= '9')) errors.push('no digit');\n  if (!chars.some((ch) => ch >= 'A' && ch <= 'Z')) errors.push('no uppercase');\n  return errors;\n}",
+    tests: [["'abc'", "['too short', 'no digit', 'no uppercase']"], ["'Password1'", '[]'], ["'password1'", "['no uppercase']"], ["'Pass1'", "['too short']"]],
+  },
+  {
+    id: 'c08', topic: 'combo', level: 4, fn: 'compress', params: 'str',
+    title: 'Сжатие строки',
+    text: "Замени серии одинаковых букв на букву и число: 'aaabcc' → 'a3bc2'. Число 1 не пишется.",
+    methods: ['for', 'счётчик', 'сравнение с соседом'],
+    hint: 'Иди по строке и считай длину серии. Когда следующий символ другой (или строка кончилась), допиши букву и, если count > 1, число.',
+    solution: "function compress(str) {\n  let result = '';\n  let count = 1;\n  for (let i = 0; i < str.length; i += 1) {\n    if (str[i] === str[i + 1]) {\n      count += 1;\n    } else {\n      result += str[i] + (count > 1 ? count : '');\n      count = 1;\n    }\n  }\n  return result;\n}",
+    tests: [["'aaabcc'", "'a3bc2'"], ["'abc'", "'abc'"], ["''", "''"], ["'zzzzzzzzzzzz'", "'z12'"]],
+  },
+  {
+    id: 'c09', topic: 'combo', level: 4, fn: 'emailsByDomain', params: 'emails',
+    title: 'Почта по доменам',
+    text: "Сгруппируй адреса по домену: ['ann@mail.ru', 'bob@gmail.com', 'kate@mail.ru'] → { 'mail.ru': ['ann', 'kate'], 'gmail.com': ['bob'] }.",
+    methods: ['split', 'деструктуризация массива', 'forEach', '|| []'],
+    hint: "const [name, domain] = email.split('@'). Дальше как в «Группировке».",
+    solution: "function emailsByDomain(emails) {\n  const result = {};\n  emails.forEach((email) => {\n    const [name, domain] = email.split('@');\n    if (!result[domain]) result[domain] = [];\n    result[domain].push(name);\n  });\n  return result;\n}",
+    tests: [["['ann@mail.ru', 'bob@gmail.com', 'kate@mail.ru']", "{ 'mail.ru': ['ann', 'kate'], 'gmail.com': ['bob'] }"], ['[]', '{}']],
+  },
+  {
+    id: 'c10', topic: 'combo', level: 4, fn: 'formatDuration', params: 'seconds',
+    title: 'Длительность',
+    text: "Переведи секунды в '1h 2m 5s'. Части с нулём не пиши. 0 секунд → '0s'.",
+    methods: ['Math.floor', '%', 'push', 'join'],
+    hint: 'Часы: Math.floor(s / 3600). Минуты: Math.floor(s % 3600 / 60). Секунды: s % 60. Собирай непустые части в массив.',
+    solution: "function formatDuration(seconds) {\n  if (seconds === 0) return '0s';\n  const h = Math.floor(seconds / 3600);\n  const m = Math.floor((seconds % 3600) / 60);\n  const s = seconds % 60;\n  const parts = [];\n  if (h) parts.push(h + 'h');\n  if (m) parts.push(m + 'm');\n  if (s) parts.push(s + 's');\n  return parts.join(' ');\n}",
+    tests: [['3725', "'1h 2m 5s'"], ['60', "'1m'"], ['0', "'0s'"], ['7201', "'2h 1s'"]],
+  },
+  {
+    id: 'c11', topic: 'combo', level: 4, fn: 'createCounter', params: 'start = 0',
+    title: 'Счётчик-замыкание',
+    text: 'Верни объект с методами inc() (увеличивает на 1 и возвращает новое значение), dec() и get(). Значение хранится в замыкании, снаружи его не видно.',
+    methods: ['замыкание', 'let', 'объект с методами'],
+    hint: 'Внутри функции let count = start; и верни { inc() { ... }, dec() { ... }, get() { ... } } — методы видят count.',
+    solution: "function createCounter(start = 0) {\n  let count = start;\n  return {\n    inc() {\n      count += 1;\n      return count;\n    },\n    dec() {\n      count -= 1;\n      return count;\n    },\n    get() {\n      return count;\n    },\n  };\n}",
+    tests: [['@const c = createCounter(); c.inc(); c.inc(); c.get()', '2', 'inc дважды'], ['@const c = createCounter(10); c.dec()', '9', 'старт 10, dec'], ['@const a = createCounter(); const b = createCounter(); a.inc(); b.get()', '0', 'счётчики независимы'], ['@createCounter(5).count', 'undefined', 'count не виден снаружи']],
+  },
+  {
+    id: 'c12', topic: 'combo', level: 4, fn: 'topWords', params: 'text, n',
+    title: 'Топ слов',
+    text: 'Верни n самых частых слов (в нижнем регистре). Слова разделены пробелами. При равной частоте — по алфавиту.',
+    methods: ['объект-счётчик', 'Object.entries', 'sort', 'slice', 'map'],
+    hint: 'Посчитай слова, переведи в entries, отсортируй: b[1] - a[1] || a[0].localeCompare(b[0]), возьми n, оставь только слова.',
+    solution: "function topWords(text, n) {\n  const counts = {};\n  text\n    .toLowerCase()\n    .split(' ')\n    .filter(Boolean)\n    .forEach((word) => {\n      counts[word] = (counts[word] || 0) + 1;\n    });\n  return Object.entries(counts)\n    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))\n    .slice(0, n)\n    .map(([word]) => word);\n}",
+    tests: [["'the cat and the dog and the bird', 2", "['the', 'and']"], ["'b a c', 2", "['a', 'b']"], ["'Hi hi HI', 1", "['hi']"]],
+  },
+  {
+    id: 'c13', topic: 'combo', level: 5, fn: 'flattenObject', params: 'obj',
+    title: 'Плоский объект',
+    text: "{ a: { b: 1, c: { d: 2 } }, e: 3 } → { 'a.b': 1, 'a.c.d': 2, e: 3 }. Массивы считай обычными значениями.",
+    methods: ['рекурсия', 'Object.entries', 'typeof', 'Array.isArray'],
+    hint: 'Вспомогательная функция walk(current, prefix). Если значение — объект (не массив и не null), вызываешь walk дальше с prefix + key + ".". Иначе записываешь result[prefix + key].',
+    solution: "function flattenObject(obj) {\n  const result = {};\n  const walk = (current, prefix) => {\n    Object.entries(current).forEach(([key, value]) => {\n      const path = prefix + key;\n      if (value !== null && typeof value === 'object' && !Array.isArray(value)) {\n        walk(value, path + '.');\n      } else {\n        result[path] = value;\n      }\n    });\n  };\n  walk(obj, '');\n  return result;\n}",
+    tests: [['{ a: { b: 1, c: { d: 2 } }, e: 3 }', "{ 'a.b': 1, 'a.c.d': 2, e: 3 }"], ['{ list: [1, 2] }', '{ list: [1, 2] }'], ['{}', '{}']],
+  },
+  {
+    id: 'c14', topic: 'combo', level: 5, fn: 'isBalanced', params: 'str',
+    title: 'Скобки',
+    text: "Верни true, если скобки (), [], {} в строке расставлены правильно: '([]{})' — да, '([)]' — нет. Другие символы игнорируй.",
+    methods: ['стек', 'push', 'pop', 'объект-словарь'],
+    hint: "Открывающую скобку кладёшь в массив-стек. На закрывающей снимаешь pop() и проверяешь, что это её пара. В конце стек должен быть пустым.",
+    solution: "function isBalanced(str) {\n  const pairs = { ')': '(', ']': '[', '}': '{' };\n  const stack = [];\n  for (let i = 0; i < str.length; i += 1) {\n    const ch = str[i];\n    if ('([{'.includes(ch)) stack.push(ch);\n    else if (pairs[ch] && stack.pop() !== pairs[ch]) return false;\n  }\n  return stack.length === 0;\n}",
+    tests: [["'([]{})'", 'true'], ["'([)]'", 'false'], ["'(('", 'false'], ["'f(x) = [a, {b}]'", 'true'], ["')('", 'false'], ["''", 'true']],
+  },
+  {
+    id: 'c15', topic: 'combo', level: 5, fn: 'romanToInt', params: 'roman',
+    title: 'Римские числа',
+    text: "Переведи римское число в обычное: 'XIV' → 14, 'MCMXCIV' → 1994.",
+    methods: ['объект-словарь', 'for', 'сравнение с соседом'],
+    hint: 'Если цифра меньше следующей за ней, её надо вычесть (IV = 5 - 1), иначе прибавить.',
+    solution: "function romanToInt(roman) {\n  const values = { I: 1, V: 5, X: 10, L: 50, C: 100, D: 500, M: 1000 };\n  let total = 0;\n  for (let i = 0; i < roman.length; i += 1) {\n    const current = values[roman[i]];\n    const next = values[roman[i + 1]] || 0;\n    total += current < next ? -current : current;\n  }\n  return total;\n}",
+    tests: [["'XIV'", '14'], ["'MCMXCIV'", '1994'], ["'III'", '3'], ["'XL'", '40']],
+  },
+];
+
+if (typeof module !== 'undefined') module.exports = TASKS;
+
+</script>
+<script>
+(() => {
+  const TOPICS = [
+    { id: 'str', name: 'Строки' },
+    { id: 'arr', name: 'Массивы' },
+    { id: 'obj', name: 'Объекты' },
+    { id: 'combo', name: 'Комбо' },
+  ];
+  const LEVELS = ['', 'Разминка', 'База', 'Уверенно', 'Сложно', 'Босс'];
+  const KEY = 'jsgym-v1';
+
+  const store = (() => {
+    let data = { solved: {}, drafts: {}, attempts: {} };
+    try { const raw = localStorage.getItem(KEY); if (raw) data = { ...data, ...JSON.parse(raw) }; } catch (e) { /* storage unavailable */ }
+    return {
+      data,
+      save() { try { localStorage.setItem(KEY, JSON.stringify(data)); } catch (e) { /* ignore */ } },
+    };
+  })();
+
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const starter = (t) => 'function ' + t.fn + '(' + t.params + ') {\n  \n}\n';
+  const lvlDots = (n) => '<span class="lvl" aria-label="уровень ' + n + ' из 5">' + [1, 2, 3, 4, 5].map((i) => '<i class="' + (i <= n ? 'on' : '') + '"></i>').join('') + '</span>';
+
+  let topic = 'str';
+  let current = TASKS[0];
+  let worker = null;
+
+  function topicTasks(id) { return TASKS.filter((t) => t.topic === id); }
+
+  function renderTabs() {
+    $('tabs').innerHTML = TOPICS.map((tp) => {
+      const list = topicTasks(tp.id);
+      const done = list.filter((t) => store.data.solved[t.id]).length;
+      return '<button role="tab" aria-selected="' + (tp.id === topic) + '" data-topic="' + tp.id + '">' + tp.name + '<span>' + done + '/' + list.length + '</span></button>';
+    }).join('');
+  }
+
+  function renderList() {
+    let lastLevel = 0;
+    $('tasklist').innerHTML = topicTasks(topic).map((t, i) => {
+      let sep = '';
+      if (t.level !== lastLevel) { sep = '<li class="lvlsep">' + t.level + ' · ' + LEVELS[t.level] + '</li>'; lastLevel = t.level; }
+      const done = store.data.solved[t.id];
+      return sep + '<li class="' + (done ? 'done' : '') + '"><button data-id="' + t.id + '" aria-current="' + (t.id === current.id) + '">'
+        + '<span class="num">' + (done ? '✓' : String(i + 1).padStart(2, '0')) + '</span>'
+        + '<span class="name">' + esc(t.title) + '</span>' + lvlDots(t.level) + '</button></li>';
+    }).join('');
+  }
+
+  function renderOverall() {
+    const done = TASKS.filter((t) => store.data.solved[t.id]).length;
+    $('overall-text').textContent = done + ' / ' + TASKS.length;
+    $('overall-bar').style.width = (done / TASKS.length) * 100 + '%';
+  }
+
+  function renderTask() {
+    const t = current;
+    const list = topicTasks(t.topic);
+    const idx = list.indexOf(t);
+    $('meta').innerHTML = '<span class="badge">' + TOPICS.find((x) => x.id === t.topic).name + ' · ' + (idx + 1) + '/' + list.length + '</span>'
+      + '<span>' + lvlDots(t.level) + ' ' + LEVELS[t.level] + '</span>'
+      + (store.data.solved[t.id] ? '<span class="solved">✓ решено</span>' : '');
+    $('title').textContent = t.title;
+    $('text').textContent = t.text;
+    $('chips').innerHTML = '<span class="lab">Пригодится</span>' + t.methods.map((m) => '<span class="chip">' + esc(m) + '</span>').join('');
+    $('fname').textContent = t.fn + '.js';
+    $('code').value = store.data.drafts[t.id] ?? starter(t);
+    $('extra').innerHTML = '';
+    $('results').innerHTML = '';
+    if (location.hash.slice(1) !== t.id) history.replaceState(null, '', '#' + t.id);
+  }
+
+  function renderAll() { renderTabs(); renderList(); renderOverall(); renderTask(); }
+
+  function select(id) {
+    const t = TASKS.find((x) => x.id === id);
+    if (!t) return;
+    current = t; topic = t.topic;
+    renderAll();
+  }
+
+  /* ---------- running code ---------- */
+  function makeWorker() {
+    const src = $('runner-src').textContent + '\nself.onmessage = (e) => { const { code, fn, tests } = e.data; self.postMessage(runTask(code, fn, tests)); };';
+    return new Worker(URL.createObjectURL(new Blob([src], { type: 'text/javascript' })));
+  }
+
+  function run(code, t) {
+    return new Promise((resolve) => {
+      let w;
+      try { w = worker || makeWorker(); worker = w; } catch (e) {
+        resolve(runTask(code, t.fn, t.tests)); return;
+      }
+      const timer = setTimeout(() => {
+        w.terminate(); worker = null;
+        resolve({ fatal: 'Код работает дольше 2 секунд. Похоже на бесконечный цикл: проверь, что условие while/for когда-нибудь становится ложным.' });
+      }, 2000);
+      w.onmessage = (e) => { clearTimeout(timer); resolve(e.data); };
+      w.onerror = (e) => {
+        clearTimeout(timer); e.preventDefault(); w.terminate(); worker = null;
+        try { resolve(runTask(code, t.fn, t.tests)); } catch (err) { resolve({ fatal: String(err) }); }
+      };
+      w.postMessage({ code, fn: t.fn, tests: t.tests });
+    });
+  }
+
+  async function check() {
+    const t = current;
+    const code = $('code').value;
+    store.data.drafts[t.id] = code;
+    store.data.attempts[t.id] = (store.data.attempts[t.id] || 0) + 1;
+    $('results').innerHTML = '<div class="summary">Проверяю…</div>';
+    const res = await run(code, t);
+    if (t !== current) return;
+    if (res.fatal) {
+      $('results').innerHTML = '<div class="summary bad">' + esc(res.fatal) + '</div>';
+      store.save();
+      return;
+    }
+    const passed = res.results.filter((r) => r.ok).length;
+    const all = passed === res.results.length;
+    let html = '<div class="summary ' + (all ? 'ok' : 'bad') + '">' + (all ? 'Все тесты пройдены: ' : 'Пройдено ') + passed + ' из ' + res.results.length + '</div>';
+    html += res.results.map((r) => {
+      let detail = '';
+      if (!r.ok) detail = r.error
+        ? '<div class="detail">ошибка: <em>' + esc(r.error) + '</em>' + (r.expected ? '<br>ждали: ' + esc(r.expected) : '') + '</div>'
+        : '<div class="detail">получили: <em>' + esc(r.actual) + '</em><br>ждали: ' + esc(r.expected) + '</div>';
+      else detail = '<div class="detail">→ ' + esc(r.actual) + '</div>';
+      return '<div class="test ' + (r.ok ? 'ok' : 'bad') + '"><span class="mark">' + (r.ok ? '✓' : '✗') + '</span><div class="body">' + esc(r.call) + detail + '</div></div>';
+    }).join('');
+    $('results').innerHTML = html;
+    if (all) {
+      const first = !store.data.solved[t.id];
+      store.data.solved[t.id] = true;
+      store.save();
+      renderTabs(); renderList(); renderOverall();
+      $('meta').querySelector('.solved') || $('meta').insertAdjacentHTML('beforeend', '<span class="solved">✓ решено</span>');
+      if (first) $('extra').innerHTML = '<div class="panel explain">Готово. Теперь объясни своими словами: что делает каждая строка и почему выбран именно этот метод.</div>';
+    } else {
+      store.save();
+    }
+  }
+
+  /* ---------- editor ---------- */
+  const ta = $('code');
+  ta.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); check(); return; }
+    if (e.key === 'Tab' && !e.shiftKey) {
+      e.preventDefault();
+      ta.setRangeText('  ', ta.selectionStart, ta.selectionEnd, 'end');
+      ta.dispatchEvent(new Event('input'));
+    } else if (e.key === 'Enter' && !e.ctrlKey && !e.metaKey) {
+      const before = ta.value.slice(0, ta.selectionStart);
+      const line = before.slice(before.lastIndexOf('\n') + 1);
+      let indent = line.match(/^\s*/)[0];
+      if (/[{[(]\s*$/.test(line)) indent += '  ';
+      e.preventDefault();
+      ta.setRangeText('\n' + indent, ta.selectionStart, ta.selectionEnd, 'end');
+      ta.dispatchEvent(new Event('input'));
+    }
+  });
+  let saveTimer;
+  ta.addEventListener('input', () => {
+    store.data.drafts[current.id] = ta.value;
+    clearTimeout(saveTimer); saveTimer = setTimeout(() => store.save(), 400);
+  });
+
+  /* ---------- buttons ---------- */
+  $('run').addEventListener('click', check);
+  $('hint-btn').addEventListener('click', () => {
+    $('extra').innerHTML = '<div class="panel hint"><b>Подсказка.</b> ' + esc(current.hint) + '</div>';
+  });
+  $('solution-btn').addEventListener('click', () => {
+    const tries = store.data.attempts[current.id] || 0;
+    if (tries === 0 && !store.data.solved[current.id]) {
+      $('extra').innerHTML = '<div class="panel confirm"><span>Ты ещё ни разу не проверял код. Сначала попробуй сам или открой подсказку.</span>'
+        + '<button class="btn" id="force-sol">Всё равно показать</button></div>';
+      $('force-sol').addEventListener('click', showSolution);
+      return;
+    }
+    showSolution();
+  });
+  function showSolution() {
+    $('extra').innerHTML = '<div class="panel solution"><b>Одно из решений</b><pre>' + esc(current.solution) + '</pre>'
+      + '<span>Не копируй: закрой решение, напиши по памяти и объясни каждую строку.</span></div>';
+  }
+  $('reset-btn').addEventListener('click', () => {
+    $('extra').innerHTML = '<div class="panel confirm"><span>Стереть твой код в этой задаче?</span><button class="btn" id="do-reset">Стереть</button><button class="btn" id="no-reset">Оставить</button></div>';
+    $('do-reset').addEventListener('click', () => { delete store.data.drafts[current.id]; store.save(); ta.value = starter(current); $('extra').innerHTML = ''; });
+    $('no-reset').addEventListener('click', () => { $('extra').innerHTML = ''; });
+  });
+  function step(d) {
+    const i = TASKS.indexOf(current) + d;
+    if (i >= 0 && i < TASKS.length) { select(TASKS[i].id); window.scrollTo({ top: 0 }); }
+  }
+  $('prev').addEventListener('click', () => step(-1));
+  $('next').addEventListener('click', () => step(1));
+  $('tabs').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-topic]'); if (!b) return;
+    const list = topicTasks(b.dataset.topic);
+    const next = list.find((t) => !store.data.solved[t.id]) || list[0];
+    select(next.id);
+  });
+  $('tasklist').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-id]'); if (b) select(b.dataset.id);
+  });
+  window.addEventListener('hashchange', () => select(location.hash.slice(1)));
+
+  /* ---------- start ---------- */
+  const fromHash = TASKS.find((t) => t.id === location.hash.slice(1));
+  current = fromHash || TASKS.find((t) => !store.data.solved[t.id]) || TASKS[0];
+  topic = current.topic;
+  renderAll();
+})();
+</script>

@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Frontend Gym</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=Onest:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+:root {
+  --bg: #f6f1ec; --surface: #fffdfa; --ink: #17151f; --muted: #5f5b70; --line: #e1d8cf; --accent: #d9480f; --accent-ink: #b83a08;
+  --font-display: 'Unbounded', 'Segoe UI', system-ui, sans-serif;
+  --font-body: 'Onest', 'Segoe UI', system-ui, sans-serif;
+  --font-code: 'JetBrains Mono', ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #14121b; --surface: #1d1a27; --ink: #ebe8f5; --muted: #a29db8; --line: #2e2a3d; --accent: #e8590c; --accent-ink: #ffa066; }
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body { display: flex; flex-direction: column; background: var(--bg); color: var(--ink); font: 15px/1.4 var(--font-body); }
+.bar { flex: none; display: flex; align-items: center; gap: 14px; padding: 8px 16px; background: var(--surface); border-bottom: 1px solid var(--line); }
+.brand { font: 700 14px/1 var(--font-display); white-space: nowrap; }
+.brand b { color: var(--accent-ink); }
+.gyms { display: flex; gap: 6px; flex: 1; min-width: 0; overflow-x: auto; scrollbar-width: thin; padding: 2px; }
+.gyms button { flex: none; display: flex; align-items: baseline; gap: 7px; font: 600 14px/1 var(--font-body); color: var(--ink); background: transparent; border: 1px solid var(--line); border-radius: 9px; padding: 8px 12px; cursor: pointer; }
+.gyms button span { font: 400 11px/1 var(--font-code); color: var(--muted); }
+.gyms button:hover { border-color: var(--accent); }
+.gyms button[aria-selected="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+.gyms button[aria-selected="true"] span { color: #ffe3d3; }
+.gyms button:focus-visible, .tools button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.gyms .soon { flex: none; align-self: center; font: 400 12px/1 var(--font-body); color: var(--muted); border: 1px dashed var(--line); border-radius: 9px; padding: 8px 10px; white-space: nowrap; }
+.total { flex: none; display: flex; align-items: center; gap: 8px; font: 600 12px/1 var(--font-code); white-space: nowrap; }
+.total .track { width: 90px; height: 7px; border-radius: 99px; background: var(--line); overflow: hidden; }
+.total .track i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .3s; }
+.tools { flex: none; position: relative; }
+.tools > button { font: 600 13px/1 var(--font-body); color: var(--ink); background: transparent; border: 1px solid var(--line); border-radius: 9px; padding: 8px 10px; cursor: pointer; }
+.menu { position: absolute; right: 0; top: calc(100% + 6px); z-index: 5; width: 320px; max-width: calc(100vw - 20px); background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px; box-shadow: 0 10px 30px rgba(0,0,0,.18); }
+.menu[hidden] { display: none; }
+.menu p { margin: 0 0 10px; font-size: 13px; color: var(--muted); }
+.menu button { display: block; width: 100%; margin-top: 6px; font: 600 13px/1 var(--font-body); color: var(--ink); background: transparent; border: 1px solid var(--line); border-radius: 8px; padding: 9px 10px; cursor: pointer; text-align: left; }
+.menu button:hover { border-color: var(--accent); }
+.menu label { display: block; font: 600 12px/1 var(--font-body); margin-bottom: 4px; }
+.menu textarea { display: block; width: 100%; resize: vertical; font: 11px/1.4 var(--font-code); color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 6px; }
+.menu textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.menu .msg { margin: 10px 0 0; font-size: 12.5px; color: var(--accent-ink); min-height: 1em; }
+.stage { flex: 1; min-height: 0; position: relative; }
+.stage iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: var(--bg); }
+.stage iframe[hidden] { display: none; }
+@media (max-width: 760px) {
+  .bar { flex-wrap: wrap; gap: 8px; padding: 8px 10px; }
+  .gyms { order: 3; flex-basis: 100%; }
+  .total { margin-left: auto; }
+  .total .track { width: 60px; }
+}
+</style>
+</head>
+<body>
+<header class="bar">
+  <div class="brand">Frontend <b>Gym</b></div>
+  <nav class="gyms" id="gyms" role="tablist" aria-label="Тренажёры"></nav>
+  <div class="total" aria-label="Общий прогресс"><div class="track"><i id="total-bar"></i></div><span id="total-text"></span></div>
+  <div class="tools">
+    <button id="tools-btn" aria-expanded="false" aria-controls="menu">Прогресс</button>
+    <div class="menu" id="menu" hidden>
+      <p>Прогресс и черновики хранятся в этом браузере. Его можно перенести в другой браузер, на другой компьютер или из онлайн-версии в файл: скопируй текст прогресса здесь и вставь его там.</p>
+      <label for="io">Текст прогресса</label>
+      <textarea id="io" rows="4" spellcheck="false" placeholder="Нажми «Показать мой прогресс» или вставь сюда текст из другого места"></textarea>
+      <button id="show-btn">Показать мой прогресс</button>
+      <button id="apply-btn">Загрузить прогресс из текста</button>
+      <div id="file-tools" hidden>
+        <button id="export-btn">Сохранить прогресс в файл</button>
+        <button id="import-btn">Загрузить прогресс из файла</button>
+        <input type="file" id="import-file" accept="application/json,.json" hidden>
+      </div>
+      <div class="msg" id="menu-msg" role="status"></div>
+    </div>
+  </div>
+</header>
+<main class="stage" id="stage"></main>
+
+__GYM_DATA__
+<script>
+__HUB_JS__
+</script>
+</body>
+</html>
